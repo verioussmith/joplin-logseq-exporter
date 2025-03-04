@@ -2,7 +2,7 @@
   "name": "joplin-logseq-exporter",
   "version": "1.0.0",
   "description": "Export Joplin notes to Logseq-compatible formats (JSON, EDN, OPML)",
-  "author": "Victor Smith",
+  "author": "Verious Smith III",
   "homepage": "https://github.com/verioussmith/joplin-logseq-exporter",
   "repository": {
     "type": "git",
