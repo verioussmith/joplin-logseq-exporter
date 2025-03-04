@@ -27,7 +27,7 @@ Once this plugin is published to the Joplin plugin repository, you can install i
 
 To install the plugin manually:
 
-1. Download the latest `.jpl` file from the [releases page](https://github.com/yourusername/joplin-logseq-exporter/releases)
+1. Download the latest `.jpl` file from the [releases page](https://github.com/verioussmith/joplin-logseq-exporter/releases)
 2. Open Joplin
 3. Go to `Tools > Options > Plugins` (or `Joplin > Preferences > Plugins` on macOS)
 4. Click the gear icon (⚙️) and select "Install from file"
@@ -72,4 +72,4 @@ MIT
 
 ## Support
 
-If you encounter any issues or have questions, please [open an issue](https://github.com/yourusername/joplin-logseq-exporter/issues) on GitHub. 
+If you encounter any issues or have questions, please [open an issue](https://github.com/verioussmith/joplin-logseq-exporter/issues) on GitHub. 
