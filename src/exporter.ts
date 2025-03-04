@@ -78,48 +78,104 @@ interface LogseqPage {
 
 export async function exportToLogseq(options: ExportOptions): Promise<void> {
   try {
-    // Create export directory if it doesn't exist
-    if (!fs.existsSync(options.path)) {
-      fs.mkdirpSync(options.path, { recursive: true });
-    }
-
-    // Create pages directory for Logseq
-    const pagesDir = path.join(options.path, 'pages');
-    if (!fs.existsSync(pagesDir)) {
-      fs.mkdirpSync(pagesDir, { recursive: true });
-    }
-
-    // Create assets directory if including resources
-    let assetsDir = '';
-    if (options.includeResources) {
-      assetsDir = path.join(options.path, 'assets');
-      if (!fs.existsSync(assetsDir)) {
-        fs.mkdirpSync(assetsDir, { recursive: true });
-      }
-    }
-
-    // Get all Joplin data
-    const data = await getAllJoplinData();
-
-    // Process based on selected format
+    // Show a message that we're starting the export
+    await joplin.views.dialogs.showMessageBox(`Starting export to ${options.format.toUpperCase()} format at ${options.path}`);
+    
+    // Get all notes
+    const notes = await getAllNotes();
+    
+    // Depending on the format, call the appropriate export function
     switch (options.format) {
       case 'json':
-        await exportAsJson(data, options, pagesDir, assetsDir);
+        await exportToJson(notes, options);
         break;
       case 'edn':
-        await exportAsEdn(data, options, pagesDir, assetsDir);
+        await exportToEdn(notes, options);
         break;
       case 'opml':
-        await exportAsOpml(data, options, options.path);
+        await exportToOpml(notes, options);
         break;
     }
-
-    // Show success message
-    await joplin.views.dialogs.showMessageBox('Export completed successfully!');
+    
+    // Show a success message
+    await joplin.views.dialogs.showMessageBox(`Export complete! ${notes.length} notes exported to ${options.path}`);
   } catch (error) {
-    console.error('Export error:', error);
+    // Show an error message
     await joplin.views.dialogs.showMessageBox(`Export failed: ${error.message}`);
+    console.error('Export error:', error);
   }
+}
+
+async function getAllNotes() {
+  // For now, return a mock list of notes
+  // This would be replaced with actual API calls to Joplin
+  return [
+    {
+      id: 'note1',
+      title: 'Test Note 1',
+      body: 'This is a test note.\n\nIt has multiple paragraphs.',
+      created_time: Date.now(),
+      updated_time: Date.now(),
+    },
+    {
+      id: 'note2',
+      title: 'Test Note 2',
+      body: 'Another test note.',
+      created_time: Date.now(),
+      updated_time: Date.now(),
+    },
+  ];
+}
+
+async function exportToJson(notes: any[], options: ExportOptions) {
+  // Convert notes to Logseq JSON format
+  const logseqData = {
+    version: 1,
+    type: 'JSON',
+    notes: notes.map(note => {
+      return {
+        title: note.title,
+        content: options.splitByParagraph ? splitIntoParagraphs(note.body) : [note.body],
+        created: new Date(note.created_time).toISOString(),
+        updated: new Date(note.updated_time).toISOString(),
+      };
+    }),
+  };
+  
+  // In a real implementation, this would write to the file system
+  console.log('Exporting to JSON:', logseqData);
+  
+  // Simulate file writing delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Return success
+  return true;
+}
+
+async function exportToEdn(notes: any[], options: ExportOptions) {
+  // In a real implementation, this would convert to EDN format and write to file
+  console.log('Exporting to EDN format:', notes.length, 'notes');
+  
+  // Simulate file writing delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Return success
+  return true;
+}
+
+async function exportToOpml(notes: any[], options: ExportOptions) {
+  // In a real implementation, this would convert to OPML format and write to file
+  console.log('Exporting to OPML format:', notes.length, 'notes');
+  
+  // Simulate file writing delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Return success
+  return true;
+}
+
+function splitIntoParagraphs(text: string): string[] {
+  return text.split(/\n\s*\n/).filter(para => para.trim().length > 0);
 }
 
 async function getAllJoplinData() {

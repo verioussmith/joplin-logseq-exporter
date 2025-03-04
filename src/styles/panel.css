@@ -1,0 +1,49 @@
+/* Styles for the Logseq Exporter panel */
+
+.export-panel {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--joplin-color);
+  background-color: var(--joplin-background-color);
+}
+
+.export-panel h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.2em;
+  font-weight: 600;
+  color: var(--joplin-color);
+}
+
+.export-panel p {
+  margin-bottom: 10px;
+  font-size: 0.9em;
+}
+
+#quick-export-button {
+  background-color: var(--joplin-button-background);
+  color: var(--joplin-button-color);
+  border: 1px solid var(--joplin-divider-color);
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.2s;
+}
+
+#quick-export-button:hover {
+  background-color: var(--joplin-button-background-hover);
+}
+
+#current-settings {
+  list-style-type: none;
+  padding-left: 0;
+  margin-top: 5px;
+  font-size: 0.85em;
+  color: var(--joplin-color-faded);
+}
+
+#current-settings li {
+  margin-bottom: 4px;
+  padding-left: 10px;
+  border-left: 2px solid var(--joplin-divider-color);
+} 
