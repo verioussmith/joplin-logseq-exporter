@@ -1,0 +1,40 @@
+/* Logseq Exporter Panel Styles */
+
+body {
+  font-family: var(--joplin-font-family);
+  font-size: var(--joplin-font-size);
+  color: var(--joplin-color);
+  background-color: var(--joplin-background-color);
+  margin: 0;
+  padding: 0;
+}
+
+h3 {
+  margin-top: 0;
+  color: var(--joplin-color);
+  border-bottom: 1px solid var(--joplin-divider-color);
+  padding-bottom: 8px;
+}
+
+button {
+  background-color: var(--joplin-button-background);
+  color: var(--joplin-button-color);
+  border: 1px solid var(--joplin-button-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  background-color: var(--joplin-button-background-hover);
+}
+
+#current-settings {
+  list-style-type: none;
+  padding-left: 0;
+  font-size: 90%;
+}
+
+#current-settings li {
+  margin-bottom: 4px;
+} 

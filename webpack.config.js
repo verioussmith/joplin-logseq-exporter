@@ -94,6 +94,18 @@ const buildScriptConfig = function (pluginId, manifestPath) {
                         from: manifestPath,
                         to: path.resolve(distDir, 'manifest.json'),
                     },
+                    {
+                        from: 'styles',
+                        to: path.resolve(distDir, 'styles'),
+                    },
+                    {
+                        from: 'scripts',
+                        to: path.resolve(distDir, 'scripts'),
+                    },
+                    {
+                        from: 'icons',
+                        to: path.resolve(distDir, 'icons'),
+                    },
                 ],
             }),
         ],
