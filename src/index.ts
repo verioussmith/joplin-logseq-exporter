@@ -147,6 +147,39 @@ joplin.plugins.register({
     // Add toolbar button
     await joplin.views.toolbarButtons.create('exportToLogseqButton', 'exportToLogseq', ToolbarButtonLocation.NoteToolbar);
     
+    // Register format-specific export commands
+    await joplin.commands.register({
+      name: 'exportToLogseqJson',
+      label: 'Export to Logseq (JSON)',
+      execute: async () => {
+        // Pre-fill dialog with JSON format
+        await showExportDialog('json');
+      },
+    });
+
+    await joplin.commands.register({
+      name: 'exportToLogseqEdn',
+      label: 'Export to Logseq (EDN)',
+      execute: async () => {
+        // Pre-fill dialog with EDN format
+        await showExportDialog('edn');
+      },
+    });
+
+    await joplin.commands.register({
+      name: 'exportToLogseqOpml',
+      label: 'Export to Logseq (OPML)',
+      execute: async () => {
+        // Pre-fill dialog with OPML format
+        await showExportDialog('opml');
+      },
+    });
+
+    // Add format-specific commands to File menu
+    await joplin.views.menuItems.create('exportToLogseqJsonMenuItem', 'exportToLogseqJson', MenuItemLocation.File);
+    await joplin.views.menuItems.create('exportToLogseqEdnMenuItem', 'exportToLogseqEdn', MenuItemLocation.File);
+    await joplin.views.menuItems.create('exportToLogseqOpmlMenuItem', 'exportToLogseqOpml', MenuItemLocation.File);
+    
     // Settings changed handler
     await joplin.settings.onChange(async () => {
       await updatePanelSettings(panel);
@@ -156,9 +189,9 @@ joplin.plugins.register({
   },
 });
 
-async function showExportDialog() {
+async function showExportDialog(preselectedFormat = null) {
   // Get default values from settings
-  const defaultFormat = await joplin.settings.value(SETTINGS.DEFAULT_FORMAT);
+  const defaultFormat = preselectedFormat || await joplin.settings.value(SETTINGS.DEFAULT_FORMAT);
   const defaultPath = await joplin.settings.value(SETTINGS.DEFAULT_EXPORT_PATH);
   const defaultIncludeResources = await joplin.settings.value(SETTINGS.INCLUDE_RESOURCES);
   const defaultSplitByParagraph = await joplin.settings.value(SETTINGS.SPLIT_BY_PARAGRAPH);
