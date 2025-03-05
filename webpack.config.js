@@ -112,7 +112,6 @@ const buildScriptConfig = function (pluginId, manifestPath) {
         externals: {
             // Don't bundle these node modules
             'fs-extra': 'commonjs2 fs-extra',
-            'edn-data': 'commonjs2 edn-data',
             'uuid': 'commonjs2 uuid',
             'path': 'commonjs2 path',
             'fs': 'commonjs2 fs',

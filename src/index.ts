@@ -1,10 +1,29 @@
-// Don't import local types for enums, use Joplin's global API instead
+// Import required modules
+import joplin from 'api';
+import { MenuItemLocation, ToolbarButtonLocation } from 'api/types';
 import { exportToLogseq } from './exporter';
+import * as fs from 'fs-extra';
+import * as path from 'path';
 
-// Access the global joplin object
-declare const joplin: any;
+// Define FileSystemItem and ModelType enums if not available in API imports
+enum FileSystemItem {
+  File = 1,
+  Directory = 2,
+}
 
-// Define setting keys
+enum ModelType {
+  Note = 1,
+  Folder = 2,
+  Setting = 3,
+  Resource = 4,
+  Tag = 5,
+  NoteTag = 6,
+  Search = 7,
+  Command = 8,
+  MasterKey = 9,
+}
+
+// Settings keys
 const SETTINGS_SECTION = 'logseqExporterSettings';
 const SETTINGS = {
   DEFAULT_FORMAT: 'defaultFormat',
@@ -13,16 +32,17 @@ const SETTINGS = {
   SPLIT_BY_PARAGRAPH: 'splitByParagraph',
 };
 
-// Use Joplin API location values as strings - these are the official values from the API
+// Define menu item locations
 const MenuItemLocation = {
-  File: 'file',
-  Edit: 'edit',
-  View: 'view',
-  Note: 'note',
-  Tools: 'tools',
-  Help: 'help'
+  File: 1,
+  Edit: 2,
+  View: 3,
+  Note: 4,
+  Tools: 5,
+  Help: 6,
 };
 
+// Use Joplin API location values as strings - these are the official values from the API
 const ToolbarButtonLocation = {
   NoteToolbar: 'noteToolbar',
   EditorToolbar: 'editorToolbar'
@@ -39,109 +59,123 @@ const SettingItemType = {
 };
 
 async function registerSettings() {
-  // Register settings section
-  await joplin.settings.registerSection(SETTINGS_SECTION, {
-    label: 'Logseq Exporter',
-    icon: 'fas fa-file-export',
-    description: 'Settings for the Logseq Exporter plugin'
-  });
+  console.log('Registering settings section and settings...');
+  
+  try {
+    // Register the settings section
+    await joplin.settings.registerSection(SETTINGS_SECTION, {
+      label: 'Logseq Exporter',
+      iconName: 'fas fa-file-export',
+      description: 'Settings for the Logseq Exporter plugin'
+    });
+    console.log('Settings section registered successfully');
 
-  // Register settings
-  await joplin.settings.registerSettings({
-    [SETTINGS.DEFAULT_FORMAT]: {
-      label: 'Default export format',
-      type: SettingItemType.String,
-      section: SETTINGS_SECTION,
-      public: true,
-      value: 'json',
-      options: {
-        'json': 'JSON',
-        'edn': 'EDN',
-        'opml': 'OPML',
+    // Register all the settings
+    await joplin.settings.registerSettings({
+      [SETTINGS.DEFAULT_FORMAT]: {
+        label: 'Default export format',
+        type: SettingItemType.String,
+        section: SETTINGS_SECTION,
+        public: true,
+        value: 'json',
+        description: 'The default format to use when exporting notes',
+        isEnum: true,
+        options: {
+          json: 'JSON',
+          edn: 'EDN',
+          opml: 'OPML'
+        }
       },
-      description: 'The default format to use when exporting notes',
-    },
-    [SETTINGS.DEFAULT_EXPORT_PATH]: {
-      label: 'Default export path',
-      type: SettingItemType.String,
-      section: SETTINGS_SECTION,
-      public: true,
-      value: '',
-      description: 'The default path to export notes to',
-    },
-    [SETTINGS.INCLUDE_RESOURCES]: {
-      label: 'Include resources/attachments',
-      type: SettingItemType.Bool,
-      section: SETTINGS_SECTION,
-      public: true,
-      value: true,
-      description: 'Whether to include attached files in exports',
-    },
-    [SETTINGS.SPLIT_BY_PARAGRAPH]: {
-      label: 'Split notes by paragraph',
-      type: SettingItemType.Bool,
-      section: SETTINGS_SECTION,
-      public: true,
-      value: true,
-      description: 'Whether to split notes into blocks by paragraph',
-    },
-  });
+      [SETTINGS.DEFAULT_EXPORT_PATH]: {
+        label: 'Default export path',
+        type: SettingItemType.String,
+        section: SETTINGS_SECTION,
+        public: true,
+        value: '',
+        description: 'The default path to export notes to',
+      },
+      [SETTINGS.INCLUDE_RESOURCES]: {
+        label: 'Include resources/attachments',
+        type: SettingItemType.Bool,
+        section: SETTINGS_SECTION,
+        public: true,
+        value: true,
+        description: 'Whether to include attached files in exports',
+      },
+      [SETTINGS.SPLIT_BY_PARAGRAPH]: {
+        label: 'Split notes by paragraph',
+        type: SettingItemType.Bool,
+        section: SETTINGS_SECTION,
+        public: true,
+        value: true,
+        description: 'Whether to split notes into blocks by paragraph',
+      },
+    });
+    console.log('Settings registered successfully');
+  } catch (error) {
+    console.error('Error registering settings:', error);
+  }
 }
 
 async function createSidebarPanel() {
   console.log('Creating sidebar panel...');
   
-  // Create the panel
-  const panel = await joplin.views.panels.create('logseqExporterPanel');
-  console.log('Panel created with handle:', panel);
-  
-  // Set the HTML content
-  await joplin.views.panels.setHtml(panel, `
-    <div class="export-panel" style="padding: 15px;">
-      <h3>Logseq Exporter</h3>
-      <p>Use this panel to quickly export your notes to Logseq.</p>
-      <div style="margin-top: 10px;">
-        <button id="quick-export-button" style="width: 100%; padding: 6px;">Export to Logseq</button>
-      </div>
-      <div style="margin-top: 20px;">
-        <p>Current Settings:</p>
-        <ul id="current-settings">
-          <li>Loading settings...</li>
-        </ul>
-      </div>
-    </div>
-  `);
-  console.log('Panel HTML set');
-  
-  // Set CSS - make sure the file exists in the correct location
-  await joplin.views.panels.addScript(panel, './styles/panel.css');
-  console.log('Panel CSS added');
-  
-  // Add JavaScript - make sure the file exists in the correct location
-  await joplin.views.panels.addScript(panel, './scripts/panel.js');
-  console.log('Panel script added');
-  
-  // Handle messages from panel
-  await joplin.views.panels.onMessage(panel, async (message) => {
-    console.log('Message received from panel:', message);
+  try {
+    // Create the panel
+    const panel = await joplin.views.panels.create('logseqExporterPanel');
+    console.log('Panel created with handle:', panel);
     
-    if (message.name === 'quickExport') {
-      console.log('Quick export requested from panel');
-      await showExportDialog();
-    } else if (message.name === 'panelReady') {
-      console.log('Panel is ready, updating settings');
-      await updatePanelSettings(panel);
-    }
-  });
-  
-  // Explicitly show the panel - this is critical!
-  await joplin.views.panels.show(panel);
-  console.log('Panel shown');
-  
-  // Update settings display when panel is visible
-  await updatePanelSettings(panel);
-  
-  return panel;
+    // Set the HTML content
+    await joplin.views.panels.setHtml(panel, `
+      <div class="export-panel" style="padding: 15px;">
+        <h3>Logseq Exporter</h3>
+        <p>Use this panel to quickly export your notes to Logseq.</p>
+        <div style="margin-top: 10px;">
+          <button id="quick-export-button" style="width: 100%; padding: 6px;">Export to Logseq</button>
+        </div>
+        <div style="margin-top: 20px;">
+          <p>Current Settings:</p>
+          <ul id="current-settings">
+            <li>Loading settings...</li>
+          </ul>
+        </div>
+      </div>
+    `);
+    console.log('Panel HTML set');
+    
+    // Set CSS - make sure the file exists in the correct location
+    await joplin.views.panels.addScript(panel, './styles/panel.css');
+    console.log('Panel CSS added');
+    
+    // Add JavaScript - make sure the file exists in the correct location
+    await joplin.views.panels.addScript(panel, './scripts/panel.js');
+    console.log('Panel script added');
+    
+    // Handle messages from panel
+    await joplin.views.panels.onMessage(panel, async (message) => {
+      console.log('Message received from panel:', message);
+      
+      if (message.name === 'quickExport') {
+        console.log('Quick export requested from panel');
+        await showExportDialog();
+      } else if (message.name === 'panelReady') {
+        console.log('Panel is ready, updating settings');
+        await updatePanelSettings(panel);
+      }
+    });
+    
+    // Explicitly show the panel - this is critical!
+    await joplin.views.panels.show(panel);
+    console.log('Panel shown');
+    
+    // Update settings display when panel is visible
+    await updatePanelSettings(panel);
+    
+    return panel;
+  } catch (error) {
+    console.error('Error creating panel:', error);
+    throw error; // Re-throw to allow upper-level error handling
+  }
 }
 
 async function updatePanelSettings(panel) {
@@ -188,35 +222,12 @@ joplin.plugins.register({
       }
       
       try {
-        // Register the main export command
-        await joplin.commands.register({
-          name: 'exportToLogseq',
-          label: 'Export to Logseq...',
-          icon: 'fas fa-file-export',
-          execute: async () => {
-            await showExportDialog();
-          },
-        });
-        console.info('Main export command registered');
-
-        // Add to Tools menu - explicitly use the enum value
-        await joplin.views.menuItems.create('exportToLogseqMenuItem', 'exportToLogseq', MenuItemLocation.Tools);
-        console.info('Added to Tools menu');
-
-        // Add toolbar button - explicitly use the enum value
-        await joplin.views.toolbarButtons.create('exportToLogseqButton', 'exportToLogseq', ToolbarButtonLocation.NoteToolbar);
-        console.info('Toolbar button created');
-      } catch (commandError) {
-        console.error('Error registering export command:', commandError);
-      }
-      
-      try {
         // Register commands for File menu and submenu items
         // First, register the parent command
         await joplin.commands.register({
           name: 'exportToLogseqParent',
           label: 'Export to Logseq',
-          icon: 'fas fa-file-export',
+          iconName: 'fas fa-file-export',
           execute: async () => {
             // This is a parent item that will have submenu entries
             // You can provide a default action here if clicked directly
@@ -251,38 +262,22 @@ joplin.plugins.register({
         });
         console.info('Format-specific commands registered');
 
-        // Create the menu structure
-        // 1. Create the parent menu item
-        await joplin.views.menuItems.create(
-          'exportToLogseqParentMenuItem', // ID of the menu item
-          'exportToLogseqParent',         // Command name it's linked to
-          MenuItemLocation.File           // Where to show the menu
-        );
-        console.info('Parent menu item created');
-
-        // 2. Create the submenu items under the parent
-        await joplin.views.menuItems.create(
-          'exportToLogseqJsonMenuItem',   // ID
-          'exportToLogseqJson',           // Command
-          MenuItemLocation.File,          // Location (must match parent)
-          { parent: 'exportToLogseqParentMenuItem' } // Link to parent
-        );
-        
-        await joplin.views.menuItems.create(
-          'exportToLogseqEdnMenuItem',
-          'exportToLogseqEdn',
-          MenuItemLocation.File,
-          { parent: 'exportToLogseqParentMenuItem' }
-        );
-        
-        await joplin.views.menuItems.create(
-          'exportToLogseqOpmlMenuItem',
-          'exportToLogseqOpml',
-          MenuItemLocation.File,
-          { parent: 'exportToLogseqParentMenuItem' }
-        );
-        
-        console.info('Format-specific submenu items created');
+        // Create the menu using the more reliable menus.create approach
+        await joplin.views.menus.create('logseqExporterMenu', 'Export to Logseq', [
+          {
+            commandName: 'exportToLogseqJson',
+            label: 'JSON Format',
+          },
+          {
+            commandName: 'exportToLogseqEdn',
+            label: 'EDN Format',
+          },
+          {
+            commandName: 'exportToLogseqOpml',
+            label: 'OPML Format',
+          },
+        ], MenuItemLocation.Tools);
+        console.info('Created export menu in Tools section');
       } catch (menuError) {
         console.error('Error creating menu items:', menuError);
       }
