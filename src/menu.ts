@@ -67,7 +67,79 @@ export async function registerMenuItems(showExportDialog: (preselectedFormat?: s
     await joplinApi.views.menuItems.create('logseqExporterOpmlMenuItem', 'exportToLogseqOpml', MenuItemLocation.File, { parent: 'exportToLogseqParent' });
     
     console.info('Created export menu in File menu with submenus');
+
+    // Register settings section
+    await joplinApi.settings.registerSection('logseqExporter', {
+      label: 'Logseq Exporter',
+      iconName: 'fas fa-share-square'
+    });
+
+    // Register path setting as string type
+    await joplinApi.settings.registerSettings({
+      [SETTINGS.EXPORT_PATH]: {
+        value: '',
+        type: 'string',
+        title: 'Export Directory',
+        description: 'Click the button below to choose location',
+        public: true,
+        section: 'logseqExporter'
+      },
+      // ... other settings ...
+    });
+
+    // Create settings panel with browse functionality
+    const panel = await joplinApi.views.panels.create('logseqSettingsPanel');
+    await joplinApi.views.panels.setHtml(panel, `
+      <div class="container">
+        <input type="text" id="exportPath" readonly>
+        <button id="browseButton">Browse...</button>
+      </div>
+      <style>
+        .container { padding: 20px; }
+        #exportPath { width: 300px; margin-right: 10px; }
+      </style>
+    `);
+
+    // Handle panel messages
+    await joplinApi.views.panels.onMessage(panel, async (message) => {
+      if (message.name === 'browseClick') {
+        const result = await joplinApi.views.dialogs.showOpenDialog({
+          title: 'Select Export Directory',
+          properties: ['openDirectory']
+        });
+        
+        if (result && result.length > 0 && result[0]) {
+          await joplinApi.settings.setValue(SETTINGS.EXPORT_PATH, result[0]);
+          await joplinApi.views.panels.postMessage(panel, {
+            name: 'updatePath',
+            path: result[0]
+          });
+        }
+      }
+    });
+
+    // Add script to handle UI interactions
+    await joplinApi.views.panels.addScript(panel, './webview.js');
   } catch (menuError) {
     console.error('Error creating menu items:', menuError);
   }
-} 
+}
+
+// In webview.js (new file):
+document.addEventListener('DOMContentLoaded', () => {
+  const pathInput = document.getElementById('exportPath');
+  const browseButton = document.getElementById('browseButton');
+  
+  // Initial load
+  webviewApi.postMessage({ name: 'getInitialPath' });
+  
+  webviewApi.onMessage((message) => {
+    if (message.name === 'updatePath') {
+      pathInput.value = message.path;
+    }
+  });
+
+  browseButton.addEventListener('click', () => {
+    webviewApi.postMessage({ name: 'browseClick' });
+  });
+}); 

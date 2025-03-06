@@ -25,16 +25,6 @@ enum ModelType {
   MasterKey = 9,
 }
 
-// Define setting item types
-enum SettingItemType {
-  String = 1,
-  Number = 2,
-  Boolean = 3,
-  Array = 4,
-  Object = 5,
-  Button = 6,
-}
-
 // Settings keys
 const SETTINGS_SECTION = 'logseqExporterSettings';
 const SETTINGS = {
@@ -45,41 +35,37 @@ const SETTINGS = {
   BROWSE_BUTTON: 'browseButton',
 };
 
+// Add this after initializing joplinApi:
+const SettingItemType = joplinApi.views.settings.SettingItemType;
+
 // Register settings
 async function registerSettings() {
   console.log('Registering settings section and settings...');
   
   try {
-    // Register the settings section
     await joplinApi.settings.registerSection(SETTINGS_SECTION, {
       label: 'Logseq Exporter',
       iconName: 'fas fa-file-export',
       description: 'Settings for the Logseq Exporter plugin'
     });
-    console.log('Settings section registered successfully');
 
-    // Register a command to handle directory selection
+    // Register directory browser command
     await joplinApi.commands.register({
       name: 'logseqExporterBrowseDir',
       label: 'Select export directory',
       execute: async () => {
-        // Show a native directory picker dialog
-        const { selectedPaths } = await joplinApi.dialogs.showOpenDialog({
-          properties: ['openDirectory', 'createDirectory'],
-          title: 'Select Export Directory',
-          buttonLabel: 'Select'
+        const result = await joplinApi.dialogs.showOpenDialog({
+          properties: ['openDirectory'],
+          title: 'Select Export Directory'
         });
         
-        if (selectedPaths && selectedPaths.length) {
-          // Save the selected path to the setting
-          await joplinApi.settings.setValue(SETTINGS.DEFAULT_EXPORT_PATH, selectedPaths[0]);
-          // Show confirmation to user
-          await joplinApi.dialogs.showMessageBox(`Export path set to: ${selectedPaths[0]}`);
+        if (result.filePaths && result.filePaths.length > 0) {
+          await joplinApi.settings.setValue(SETTINGS.DEFAULT_EXPORT_PATH, result.filePaths[0]);
         }
       }
     });
 
-    // Register all the settings
+    // Register settings with proper types and options
     await joplinApi.settings.registerSettings({
       [SETTINGS.DEFAULT_FORMAT]: {
         label: 'Default export format',
@@ -87,11 +73,11 @@ async function registerSettings() {
         section: SETTINGS_SECTION,
         public: true,
         value: 'json',
-        description: 'The default format to use when exporting notes',
+        description: 'Default format for exports',
         isEnum: true,
         options: {
           json: 'JSON',
-          edn: 'EDN',
+          edn: 'EDN', 
           opml: 'OPML'
         }
       },
@@ -101,34 +87,35 @@ async function registerSettings() {
         section: SETTINGS_SECTION,
         public: true,
         value: '',
-        description: 'The default path to export notes to',
+        description: 'Path for exported files (click button below to browse)'
       },
       [SETTINGS.BROWSE_BUTTON]: {
-        label: 'Browse',
+        label: 'Browse for export directory',
         type: SettingItemType.Button,
         section: SETTINGS_SECTION,
         public: true,
         value: 'Browse...',
+        description: 'Select export folder',
         onClick: { command: 'logseqExporterBrowseDir' }
       },
       [SETTINGS.INCLUDE_RESOURCES]: {
-        label: 'Include resources (attachments)',
-        type: SettingItemType.Boolean,
+        label: 'Include attachments',
+        type: SettingItemType.Bool,
         section: SETTINGS_SECTION,
         public: true,
         value: true,
-        description: 'Whether to include attached files in exports',
+        description: 'Export file attachments with notes'
       },
       [SETTINGS.SPLIT_BY_PARAGRAPH]: {
-        label: 'Split notes into blocks by paragraph',
-        type: SettingItemType.Boolean,
+        label: 'Split by paragraphs',
+        type: SettingItemType.Bool,
         section: SETTINGS_SECTION,
         public: true,
         value: true,
-        description: 'Whether to split notes into blocks by paragraph',
-      },
+        description: 'Create separate blocks for each paragraph'
+      }
     });
-    console.log('Settings registered successfully');
+
   } catch (error) {
     console.error('Error registering settings:', error);
   }
