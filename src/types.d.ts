@@ -6,6 +6,13 @@ declare module 'api' {
     commands: {
       register: (options: any) => Promise<void>;
     };
+    settings: {
+      registerSection: (name: string, section: any) => Promise<void>;
+      registerSettings: (settings: any) => Promise<void>;
+      value: (key: string) => Promise<any>;
+      setValue: (key: string, value: any) => Promise<void>;
+      onChange: (callback: Function) => Promise<void>;
+    };
     views: {
       menuItems: {
         create: (id: string, commandName: string, location: number) => Promise<void>;
@@ -20,9 +27,21 @@ declare module 'api' {
         open: (dialogHandle: number) => Promise<any>;
         showMessageBox: (message: string) => Promise<void>;
       };
+      panels: {
+        create: (id: string) => Promise<string>;
+        setHtml: (handle: string, html: string) => Promise<string>;
+        addScript: (handle: string, scriptPath: string) => Promise<void>;
+        onMessage: (handle: string, callback: Function) => Promise<void>;
+        postMessage: (handle: string, message: any) => void;
+        show: (handle: string) => Promise<void>;
+        hide: (handle: string) => Promise<void>;
+      };
     };
     data: {
       get: (path: string[], query?: any) => Promise<any>;
+    };
+    interop: {
+      registerExportModule: (options: any) => Promise<void>;
     };
   };
   export default joplin;
@@ -47,4 +66,12 @@ declare module 'api/types' {
 declare module 'edn-data' {
   export function encode(data: any): string;
   export function parse(data: string): any;
+}
+
+declare module 'path' {
+  export function join(...paths: string[]): string;
+  export function dirname(path: string): string;
+  export function basename(path: string, ext?: string): string;
+  export function extname(path: string): string;
+  export function resolve(...paths: string[]): string;
 } 

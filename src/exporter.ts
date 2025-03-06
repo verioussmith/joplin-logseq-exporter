@@ -3,8 +3,9 @@ import * as fs from 'fs-extra';
 const path = require('path');
 import * as edn from 'edn-data';
 
-// Access the global joplin object
-declare const joplin: any;
+// Access the joplin object, ensuring it's available through any method (direct import, global, etc.)
+import joplinModule from 'api';
+const joplin = joplinModule || (typeof globalThis !== 'undefined' && (globalThis as any).joplin) || (typeof global !== 'undefined' && (global as any).joplin);
 
 interface ExportOptions {
   format: 'json' | 'edn' | 'opml';
@@ -20,12 +21,12 @@ interface JoplinNote {
   body: string;
   created_time: number;
   updated_time: number;
-  is_conflict: number;
+  is_conflict: boolean;
   latitude: string;
   longitude: string;
   altitude: string;
   author: string;
-  source_url: string;
+  source_url?: string;
   is_todo: number;
   todo_due: number;
   todo_completed: number;
@@ -33,8 +34,6 @@ interface JoplinNote {
   source_application: string;
   application_data: string;
   order: number;
-  user_created_time: number;
-  user_updated_time: number;
   encryption_cipher_text: string;
   encryption_applied: number;
   markup_language: number;
@@ -46,21 +45,26 @@ interface JoplinNote {
 
 interface JoplinFolder {
   id: string;
-  title: string;
   parent_id: string;
+  title: string;
+  created_time: number;
+  updated_time: number;
 }
 
 interface JoplinTag {
   id: string;
   title: string;
+  created_time: number;
+  updated_time: number;
 }
 
 interface JoplinResource {
   id: string;
   title: string;
   mime: string;
-  filename: string;
   file_extension: string;
+  created_time: number;
+  updated_time: number;
 }
 
 interface LogseqBlock {
@@ -78,11 +82,20 @@ interface LogseqPage {
 
 export async function exportToLogseq(options: ExportOptions): Promise<void> {
   try {
+    // Replace old data collection with:
+    const { notes, folders, tags, resources } = await getAllJoplinData();
+
+    // Add validation checks
+    if (notes.length === 0) {
+      throw new Error('No notes found in Joplin database');
+    }
+
+    if (folders.length === 0) {
+      console.warn('No folders/notebooks found - export will be flat');
+    }
+
     // Show a message that we're starting the export
     await joplin.views.dialogs.showMessageBox(`Starting export to ${options.format.toUpperCase()} format at ${options.path}`);
-    
-    // Get all notes
-    const notes = await getAllNotes();
     
     // Depending on the format, call the appropriate export function
     switch (options.format) {
@@ -100,31 +113,134 @@ export async function exportToLogseq(options: ExportOptions): Promise<void> {
     // Show a success message
     await joplin.views.dialogs.showMessageBox(`Export complete! ${notes.length} notes exported to ${options.path}`);
   } catch (error) {
-    // Show an error message
-    await joplin.views.dialogs.showMessageBox(`Export failed: ${error.message}`);
+    const message = error instanceof Error ? error.message : String(error);
+    await joplin.views.dialogs.showMessageBox(`Export failed: ${message}`);
     console.error('Export error:', error);
+    throw error;
   }
 }
 
-async function getAllNotes() {
-  // For now, return a mock list of notes
-  // This would be replaced with actual API calls to Joplin
-  return [
-    {
-      id: 'note1',
-      title: 'Test Note 1',
-      body: 'This is a test note.\n\nIt has multiple paragraphs.',
-      created_time: Date.now(),
-      updated_time: Date.now(),
-    },
-    {
-      id: 'note2',
-      title: 'Test Note 2',
-      body: 'Another test note.',
-      created_time: Date.now(),
-      updated_time: Date.now(),
-    },
-  ];
+async function getAllNotes(): Promise<JoplinNote[]> {
+  let page = 1;
+  const allNotes: JoplinNote[] = [];
+  
+  try {
+    while(true) {
+      const response = await joplin.data.get(['notes'], {
+        fields: [
+          'id', 
+          'parent_id', 
+          'title', 
+          'body',
+          'created_time',
+          'updated_time',
+          'is_conflict',
+          'source_url'
+        ],
+        limit: 100,
+        page: page++,
+        order_by: 'updated_time',
+        order_dir: 'DESC'
+      });
+
+      allNotes.push(...response.items);
+      if(!response.has_more) break;
+    }
+  } catch (error) {
+    console.error('Failed to fetch notes:', error);
+    throw new Error('Note retrieval failed: ' + error.message);
+  }
+
+  return allNotes;
+}
+
+async function getAllFolders(): Promise<JoplinFolder[]> {
+  let page = 1;
+  const allFolders: JoplinFolder[] = [];
+  
+  try {
+    while(true) {
+      const response = await joplin.data.get(['folders'], {
+        fields: [
+          'id', 
+          'parent_id', 
+          'title', 
+          'created_time',
+          'updated_time'
+        ],
+        limit: 100,
+        page: page++
+      });
+
+      allFolders.push(...response.items);
+      if(!response.has_more) break;
+    }
+  } catch (error) {
+    console.error('Failed to fetch folders:', error);
+    throw new Error('Folder retrieval failed: ' + error.message);
+  }
+
+  return allFolders;
+}
+
+async function getAllTags(): Promise<JoplinTag[]> {
+  let page = 1;
+  const allTags: JoplinTag[] = [];
+  
+  try {
+    while(true) {
+      const response = await joplin.data.get(['tags'], {
+        fields: ['id', 'title', 'created_time', 'updated_time'],
+        limit: 100,
+        page: page++
+      });
+      
+      allTags.push(...response.items);
+      if(!response.has_more) break;
+    }
+  } catch (error) {
+    console.error('Failed to fetch tags:', error);
+    throw new Error('Tag retrieval failed: ' + error.message);
+  }
+  return allTags;
+}
+
+async function getAllResources(): Promise<JoplinResource[]> {
+  let page = 1;
+  const allResources: JoplinResource[] = [];
+  
+  try {
+    while(true) {
+      const response = await joplin.data.get(['resources'], {
+        fields: ['id', 'title', 'mime', 'file_extension', 'created_time', 'updated_time'],
+        limit: 100,
+        page: page++
+      });
+      
+      allResources.push(...response.items);
+      if(!response.has_more) break;
+    }
+  } catch (error) {
+    console.error('Failed to fetch resources:', error);
+    throw new Error('Resource retrieval failed: ' + error.message);
+  }
+  return allResources;
+}
+
+async function getAllJoplinData() {
+  console.info('Starting Joplin data collection...');
+  
+  const [notes, folders, tags, resources] = await Promise.all([
+    getAllNotes(),
+    getAllFolders(),
+    getAllTags(),
+    getAllResources()
+  ]);
+
+  console.info(`Collected ${notes.length} notes, ${folders.length} folders, ` +
+    `${tags.length} tags, ${resources.length} resources`);
+
+  return { notes, folders, tags, resources };
 }
 
 async function exportToJson(notes: any[], options: ExportOptions) {
@@ -176,41 +292,6 @@ async function exportToOpml(notes: any[], options: ExportOptions) {
 
 function splitIntoParagraphs(text: string): string[] {
   return text.split(/\n\s*\n/).filter(para => para.trim().length > 0);
-}
-
-async function getAllJoplinData() {
-  // Get all folders
-  const folders = await joplin.data.get(['folders'], { 
-    fields: ['id', 'title', 'parent_id']
-  });
-
-  // Get all notes
-  const notes = await joplin.data.get(['notes'], { 
-    fields: ['id', 'parent_id', 'title', 'body', 'created_time', 'updated_time', 'user_created_time', 'user_updated_time']
-  });
-
-  // Get all tags
-  const tags = await joplin.data.get(['tags'], { 
-    fields: ['id', 'title']
-  });
-
-  // Get note-tag associations
-  const noteTags = await joplin.data.get(['notes', 'tags'], {
-    fields: ['id', 'note_id', 'tag_id']
-  });
-
-  // Get resources if needed
-  const resources = await joplin.data.get(['resources'], {
-    fields: ['id', 'title', 'mime', 'filename', 'file_extension']
-  });
-
-  return {
-    folders: folders.items as JoplinFolder[],
-    notes: notes.items as JoplinNote[],
-    tags: tags.items as JoplinTag[],
-    noteTags: noteTags.items as { id: string; note_id: string; tag_id: string }[],
-    resources: resources.items as JoplinResource[]
-  };
 }
 
 async function exportAsJson(

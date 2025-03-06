@@ -67,18 +67,22 @@ const buildScriptConfig = function (pluginId, manifestPath) {
                         options: {
                             transpileOnly: true,
                             compilerOptions: {
-                                skipLibCheck: true
+                                skipLibCheck: true,
+                                target: "es2020"
                             }
                         }
                     },
-                    exclude: /node_modules/,
-                },
+                    exclude: /node_modules/,  // Exclude all node_modules to avoid parsing errors
+                }
             ],
         },
         resolve: {
             alias: {
-                api: path.resolve(__dirname, 'node_modules/@joplin/lib/services/rest/api'),
-                'api/types': path.resolve(__dirname, 'node_modules/@joplin/lib/services/rest/types')
+                // Use our mock implementation to satisfy webpack
+                'api': path.resolve(__dirname, 'src/mocks/api.js'),
+                '@joplin/lib/services/rest/api': path.resolve(__dirname, 'src/mocks/empty.js'),
+                '@joplin/renderer': path.resolve(__dirname, 'src/mocks/empty.js'),
+                '@joplin/lib': path.resolve(__dirname, 'src/mocks/empty.js')
             },
             extensions: ['.tsx', '.ts', '.js'],
         },
@@ -115,6 +119,10 @@ const buildScriptConfig = function (pluginId, manifestPath) {
             'uuid': 'commonjs2 uuid',
             'path': 'commonjs2 path',
             'fs': 'commonjs2 fs',
+            // Add Joplin modules as externals
+            '@joplin/lib/services/rest/api': 'commonjs2 @joplin/lib/services/rest/api',
+            '@joplin/lib': 'commonjs2 @joplin/lib',
+            '@joplin/renderer': 'commonjs2 @joplin/renderer'
         },
         node: {
             // Handle built-in modules properly
