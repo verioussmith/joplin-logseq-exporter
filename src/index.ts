@@ -36,7 +36,7 @@ const SETTINGS = {
 };
 
 // Add this after initializing joplinApi:
-const SettingItemType = joplinApi.views.settings.SettingItemType;
+const SettingItemType = joplinApi.settings.SettingItemType;
 
 // Register settings
 async function registerSettings() {
@@ -115,6 +115,8 @@ async function registerSettings() {
         description: 'Create separate blocks for each paragraph'
       }
     });
+
+    const panel = await joplinApi.views.panels.create('logseqSettingsPanel');
 
   } catch (error) {
     console.error('Error registering settings:', error);

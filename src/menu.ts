@@ -62,9 +62,9 @@ export async function registerMenuItems(showExportDialog: (preselectedFormat?: s
     await joplinApi.views.menuItems.create('logseqExporterMenuItem', 'exportToLogseqParent', MenuItemLocation.File, { accelerator: 'CmdOrCtrl+Alt+L' });
     
     // Then add submenu items
-    await joplinApi.views.menuItems.create('logseqExporterJsonMenuItem', 'exportToLogseqJson', MenuItemLocation.File, { parent: 'exportToLogseqParent' });
-    await joplinApi.views.menuItems.create('logseqExporterEdnMenuItem', 'exportToLogseqEdn', MenuItemLocation.File, { parent: 'exportToLogseqParent' });
-    await joplinApi.views.menuItems.create('logseqExporterOpmlMenuItem', 'exportToLogseqOpml', MenuItemLocation.File, { parent: 'exportToLogseqParent' });
+    await joplinApi.views.menuItems.create('logseqExportJson', 'exportToLogseqJson', MenuItemLocation.File, { parent: 'exportToLogseqParent' });
+    await joplinApi.views.menuItems.create('logseqExportEdn', 'exportToLogseqEdn', MenuItemLocation.File, { parent: 'exportToLogseqParent' });
+    await joplinApi.views.menuItems.create('logseqExportOpml', 'exportToLogseqOpml', MenuItemLocation.File, { parent: 'exportToLogseqParent' });
     
     console.info('Created export menu in File menu with submenus');
 
