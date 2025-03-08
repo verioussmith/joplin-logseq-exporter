@@ -6,8 +6,6 @@ import { exportToLogseq } from './exporter';
 // Replace direct imports with joplin.require
 // import * as fs from 'fs-extra';
 // import * as path from 'path';
-const fs = joplin.require('fs-extra');
-const path = joplin.require('path');
 import { registerMenuItems } from './menu';
 
 // Define FileSystemItem and ModelType enums if not available in API imports
@@ -323,7 +321,7 @@ async function showExportDialog(preselectedFormat = null) {
     if (message.name === 'openFilePicker') {
       try {
         // Show the file picker dialog
-        const result = await joplin.dialogs.showOpenDialog({
+        const result = await joplin.views.dialogs.showOpenDialog({
           properties: ['openDirectory', 'createDirectory'],
           title: 'Select export directory',
           buttonLabel: 'Select',
