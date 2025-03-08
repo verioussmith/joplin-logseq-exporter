@@ -7,6 +7,17 @@ declare module 'api' {
       register: (options: any) => Promise<void>;
     };
     settings: {
+      SettingItemType: {
+        String: number;
+        Int: number;
+        Bool: number;
+        SettingItemSubType: {
+          DirectoryPath: number;
+        }
+      };
+      SettingItemSubType: {
+        DirectoryPath: number;
+      };
       registerSection: (name: string, section: any) => Promise<void>;
       registerSettings: (settings: any) => Promise<void>;
       value: (key: string) => Promise<any>;
@@ -15,7 +26,7 @@ declare module 'api' {
     };
     views: {
       menuItems: {
-        create: (id: string, commandName: string, location: number) => Promise<void>;
+        create: (id: string, commandName: string, location: number, options?: any) => Promise<void>;
       };
       toolbarButtons: {
         create: (id: string, commandName: string, location: number) => Promise<void>;
@@ -26,6 +37,10 @@ declare module 'api' {
         setButtons: (dialogHandle: number, buttons: { id: string, title: string }[]) => Promise<void>;
         open: (dialogHandle: number) => Promise<any>;
         showMessageBox: (message: string) => Promise<void>;
+        showOpenDialog: (options: any) => Promise<any>;
+        onMessage: (handle: number, callback: Function) => Promise<void>;
+        addScript: (handle: number, scriptPath: string) => Promise<void>;
+        postMessage: (handle: number, message: any) => Promise<void>;
       };
       panels: {
         create: (id: string) => Promise<string>;
@@ -43,24 +58,13 @@ declare module 'api' {
     interop: {
       registerExportModule: (options: any) => Promise<void>;
     };
+    require: (moduleName: string) => any;
+    versionInfo: () => Promise<any>;
+    dialogs: {
+      showOpenDialog: (options: any) => Promise<any>;
+    };
   };
   export default joplin;
-}
-
-declare module 'api/types' {
-  export enum MenuItemLocation {
-    File = 1,
-    Edit = 2,
-    View = 3,
-    Note = 4,
-    Tools = 5,
-    Help = 6
-  }
-
-  export enum ToolbarButtonLocation {
-    NoteToolbar = 1,
-    EditorToolbar = 2
-  }
 }
 
 declare module 'edn-data' {

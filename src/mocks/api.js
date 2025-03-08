@@ -1,10 +1,8 @@
-// Mock API implementation for webpack
-// This is a special export that makes sure we expose the global joplin at runtime
-// while still satisfying webpack during build
+// Mock API implementation for webpack testing
+// This provides a minimal mock of the Joplin API for testing purposes
 module.exports = {
-    // At runtime, this will be ignored and the real joplin will be used
     __esModule: true,
-    default: global.joplin || {
+    default: {
         plugins: { register: () => { } },
         commands: { register: () => Promise.resolve() },
         settings: {
@@ -33,6 +31,30 @@ module.exports = {
         },
         interop: {
             registerExportModule: () => Promise.resolve()
+        },
+        require: (moduleName) => {
+            // Mock implementation of joplin.require
+            if (moduleName === 'fs-extra') {
+                return {
+                    writeFileSync: () => { },
+                    readFileSync: () => '',
+                    existsSync: () => false,
+                    mkdirSync: () => { },
+                    copySync: () => { }
+                };
+            }
+            if (moduleName === 'path') {
+                return {
+                    join: (...args) => args.join('/'),
+                    dirname: (p) => p.split('/').slice(0, -1).join('/'),
+                    basename: (p) => p.split('/').pop()
+                };
+            }
+            return {};
+        },
+        versionInfo: () => Promise.resolve({ version: '2.0.0' }),
+        dialogs: {
+            showOpenDialog: () => Promise.resolve({ filePaths: [] })
         }
     }
 }; 

@@ -1,10 +1,13 @@
 // Import required modules
 import joplin from 'api';
-// Ensure we have the real joplin object at runtime
-const joplinApi = joplin || (typeof globalThis !== 'undefined' && globalThis.joplin) || joplin;
+// Remove fallback reference
+// const joplinApi = joplin || (typeof globalThis !== 'undefined' && globalThis.joplin) || joplin;
 import { exportToLogseq } from './exporter';
-import * as fs from 'fs-extra';
-import * as path from 'path';
+// Replace direct imports with joplin.require
+// import * as fs from 'fs-extra';
+// import * as path from 'path';
+const fs = joplin.require('fs-extra');
+const path = joplin.require('path');
 import { registerMenuItems } from './menu';
 
 // Define FileSystemItem and ModelType enums if not available in API imports
@@ -26,7 +29,7 @@ enum ModelType {
 }
 
 // Settings keys
-const SETTINGS_SECTION = 'logseqExporterSettings';
+const SETTINGS_SECTION = 'logseqExporter';
 const SETTINGS = {
   DEFAULT_FORMAT: 'defaultFormat',
   DEFAULT_EXPORT_PATH: 'defaultExportPath',
@@ -36,87 +39,59 @@ const SETTINGS = {
 };
 
 // Add this after initializing joplinApi:
-const SettingItemType = joplinApi.settings.SettingItemType;
+const SettingItemType = joplin.settings.SettingItemType;
 
 // Register settings
 async function registerSettings() {
   console.log('Registering settings section and settings...');
   
   try {
-    await joplinApi.settings.registerSection(SETTINGS_SECTION, {
+    await joplin.settings.registerSection(SETTINGS_SECTION, {
       label: 'Logseq Exporter',
-      iconName: 'fas fa-file-export',
-      description: 'Settings for the Logseq Exporter plugin'
+      iconName: 'fas fa-share-square',
+      description: 'Configure export options for Logseq'
     });
 
-    // Register directory browser command
-    await joplinApi.commands.register({
-      name: 'logseqExporterBrowseDir',
-      label: 'Select export directory',
-      execute: async () => {
-        const result = await joplinApi.dialogs.showOpenDialog({
-          properties: ['openDirectory'],
-          title: 'Select Export Directory'
-        });
-        
-        if (result.filePaths && result.filePaths.length > 0) {
-          await joplinApi.settings.setValue(SETTINGS.DEFAULT_EXPORT_PATH, result.filePaths[0]);
-        }
-      }
-    });
-
-    // Register settings with proper types and options
-    await joplinApi.settings.registerSettings({
+    // Unified settings registration
+    await joplin.settings.registerSettings({
       [SETTINGS.DEFAULT_FORMAT]: {
-        label: 'Default export format',
+        public: true,
         type: SettingItemType.String,
         section: SETTINGS_SECTION,
-        public: true,
         value: 'json',
-        description: 'Default format for exports',
-        isEnum: true,
+        label: 'Default Export Format',
         options: {
-          json: 'JSON',
-          edn: 'EDN', 
-          opml: 'OPML'
-        }
+          'json': 'JSON',
+          'edn': 'EDN',
+          'opml': 'OPML'
+        },
+        description: 'Select default format for exports'
       },
       [SETTINGS.DEFAULT_EXPORT_PATH]: {
-        label: 'Default export path',
+        public: true,
         type: SettingItemType.String,
         section: SETTINGS_SECTION,
-        public: true,
         value: '',
-        description: 'Path for exported files (click button below to browse)'
-      },
-      [SETTINGS.BROWSE_BUTTON]: {
-        label: 'Browse for export directory',
-        type: SettingItemType.Button,
-        section: SETTINGS_SECTION,
-        public: true,
-        value: 'Browse...',
-        description: 'Select export folder',
-        onClick: { command: 'logseqExporterBrowseDir' }
+        label: 'Default Export Path',
+        description: 'Base directory for exported files'
       },
       [SETTINGS.INCLUDE_RESOURCES]: {
-        label: 'Include attachments',
+        public: true,
         type: SettingItemType.Bool,
         section: SETTINGS_SECTION,
-        public: true,
         value: true,
-        description: 'Export file attachments with notes'
+        label: 'Include Attachments',
+        description: 'Export linked resources/attachments'
       },
       [SETTINGS.SPLIT_BY_PARAGRAPH]: {
-        label: 'Split by paragraphs',
+        public: true,
         type: SettingItemType.Bool,
         section: SETTINGS_SECTION,
-        public: true,
         value: true,
+        label: 'Split by Paragraph',
         description: 'Create separate blocks for each paragraph'
       }
     });
-
-    const panel = await joplinApi.views.panels.create('logseqSettingsPanel');
 
   } catch (error) {
     console.error('Error registering settings:', error);
@@ -129,7 +104,7 @@ async function registerSettings() {
 async function registerExportModules() {
   try {
     // Register JSON Export Module
-    await joplinApi.interop.registerExportModule({
+    await joplin.interop.registerExportModule({
       description: 'JSON - Export to Logseq (JSON Format)',
       format: 'logseq-json',
       target: FileSystemItem.Directory,
@@ -155,15 +130,15 @@ async function registerExportModules() {
         await exportToLogseq({
           format: 'json',
           path: context.destPath,
-          includeResources: await joplinApi.settings.value(SETTINGS.INCLUDE_RESOURCES),
-          splitByParagraph: await joplinApi.settings.value(SETTINGS.SPLIT_BY_PARAGRAPH),
+          includeResources: await joplin.settings.value(SETTINGS.INCLUDE_RESOURCES),
+          splitByParagraph: await joplin.settings.value(SETTINGS.SPLIT_BY_PARAGRAPH),
         });
       },
     });
     console.info('Registered JSON export module');
 
     // Register EDN Export Module
-    await joplinApi.interop.registerExportModule({
+    await joplin.interop.registerExportModule({
       description: 'EDN - Export to Logseq (EDN Format)',
       format: 'logseq-edn',
       target: FileSystemItem.Directory,
@@ -189,15 +164,15 @@ async function registerExportModules() {
         await exportToLogseq({
           format: 'edn',
           path: context.destPath,
-          includeResources: await joplinApi.settings.value(SETTINGS.INCLUDE_RESOURCES),
-          splitByParagraph: await joplinApi.settings.value(SETTINGS.SPLIT_BY_PARAGRAPH),
+          includeResources: await joplin.settings.value(SETTINGS.INCLUDE_RESOURCES),
+          splitByParagraph: await joplin.settings.value(SETTINGS.SPLIT_BY_PARAGRAPH),
         });
       },
     });
     console.info('Registered EDN export module');
 
     // Register OPML Export Module
-    await joplinApi.interop.registerExportModule({
+    await joplin.interop.registerExportModule({
       description: 'OPML - Export to Logseq (OPML Format)',
       format: 'logseq-opml',
       target: FileSystemItem.Directory,
@@ -223,8 +198,8 @@ async function registerExportModules() {
         await exportToLogseq({
           format: 'opml',
           path: context.destPath,
-          includeResources: await joplinApi.settings.value(SETTINGS.INCLUDE_RESOURCES),
-          splitByParagraph: await joplinApi.settings.value(SETTINGS.SPLIT_BY_PARAGRAPH),
+          includeResources: await joplin.settings.value(SETTINGS.INCLUDE_RESOURCES),
+          splitByParagraph: await joplin.settings.value(SETTINGS.SPLIT_BY_PARAGRAPH),
         });
       },
     });
@@ -243,6 +218,12 @@ joplin.plugins.register({
     
     // Register settings
     await registerSettings();
+    
+    // Remove duplicate initialization of joplinApi
+    // const joplinApi = joplin || (typeof globalThis !== 'undefined' && globalThis.joplin) || joplin;
+    
+    // Now you can access SettingItemSubType directly from joplin
+    const SettingItemSubType = joplin.settings.SettingItemType.SettingItemSubType;
     
     try {
       // No longer creating the sidebar panel since it's not needed
@@ -275,13 +256,13 @@ joplin.plugins.register({
 
 async function showExportDialog(preselectedFormat = null) {
   // Get default values from settings
-  const defaultFormat = preselectedFormat || await joplinApi.settings.value(SETTINGS.DEFAULT_FORMAT);
-  const defaultPath = await joplinApi.settings.value(SETTINGS.DEFAULT_EXPORT_PATH);
-  const defaultIncludeResources = await joplinApi.settings.value(SETTINGS.INCLUDE_RESOURCES);
-  const defaultSplitByParagraph = await joplinApi.settings.value(SETTINGS.SPLIT_BY_PARAGRAPH);
+  const defaultFormat = preselectedFormat || await joplin.settings.value(SETTINGS.DEFAULT_FORMAT);
+  const defaultPath = await joplin.settings.value(SETTINGS.DEFAULT_EXPORT_PATH);
+  const defaultIncludeResources = await joplin.settings.value(SETTINGS.INCLUDE_RESOURCES);
+  const defaultSplitByParagraph = await joplin.settings.value(SETTINGS.SPLIT_BY_PARAGRAPH);
   
   // Create dialog for export options
-  const dialogs = joplinApi.views.dialogs;
+  const dialogs = joplin.views.dialogs;
   const dialog = await dialogs.create('exportToLogseqDialog');
   
   await dialogs.setHtml(dialog, `
@@ -342,7 +323,7 @@ async function showExportDialog(preselectedFormat = null) {
     if (message.name === 'openFilePicker') {
       try {
         // Show the file picker dialog
-        const result = await joplinApi.dialogs.showOpenDialog({
+        const result = await joplin.dialogs.showOpenDialog({
           properties: ['openDirectory', 'createDirectory'],
           title: 'Select export directory',
           buttonLabel: 'Select',
@@ -387,14 +368,14 @@ async function showExportDialog(preselectedFormat = null) {
     
     // Save as default if requested
     if (saveAsDefault) {
-      await joplinApi.settings.setValue(SETTINGS.DEFAULT_FORMAT, format);
-      await joplinApi.settings.setValue(SETTINGS.DEFAULT_EXPORT_PATH, path);
-      await joplinApi.settings.setValue(SETTINGS.INCLUDE_RESOURCES, includeResources);
-      await joplinApi.settings.setValue(SETTINGS.SPLIT_BY_PARAGRAPH, splitByParagraph);
+      await joplin.settings.setValue(SETTINGS.DEFAULT_FORMAT, format);
+      await joplin.settings.setValue(SETTINGS.DEFAULT_EXPORT_PATH, path);
+      await joplin.settings.setValue(SETTINGS.INCLUDE_RESOURCES, includeResources);
+      await joplin.settings.setValue(SETTINGS.SPLIT_BY_PARAGRAPH, splitByParagraph);
     }
 
     // Show progress
-    await joplinApi.views.dialogs.showMessageBox('Starting export... This may take a while depending on the number of notes.');
+    await joplin.views.dialogs.showMessageBox('Starting export... This may take a while depending on the number of notes.');
 
     // Start export process
     await exportToLogseq({
