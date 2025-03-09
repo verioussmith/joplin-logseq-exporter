@@ -1,11 +1,6 @@
 // Import required modules
 import joplin from 'api';
-// Remove fallback reference
-// const joplinApi = joplin || (typeof globalThis !== 'undefined' && globalThis.joplin) || joplin;
 import { exportToLogseq } from './exporter';
-// Replace direct imports with joplin.require
-// import * as fs from 'fs-extra';
-// import * as path from 'path';
 import { registerMenuItems } from './menu';
 
 // Define FileSystemItem and ModelType enums if not available in API imports
@@ -36,8 +31,6 @@ const SETTINGS = {
   BROWSE_BUTTON: 'browseButton',
 };
 
-// Define SettingItemType here - it will be available globally
-const SettingItemType = joplin.settings.SettingItemType;
 
 /**
  * Show the export dialog with options for exporting to Logseq
@@ -198,6 +191,7 @@ joplin.plugins.register({
       // Define registerSettings inside onStart
       async function registerSettings() {
         console.log('Registering settings section and settings...');
+        const SettingItemType = joplin.settings.SettingItemType;
         
         try {
           console.log('Registering settings section with ID:', SETTINGS_SECTION);
