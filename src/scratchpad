@@ -1,0 +1,20 @@
+Does our current @Codebase conform completely to the @Joplin Plugin API Ref Documants?  Thoroughly examine the code for diversions from official practices.  Look at each file and function and tell me what is not matching documentation and needs to be refactored, what can be completely removed in favor of conforming to the Joplin API?  Take all the time you need to be thorough.
+
+API Docs: @https://joplinapp.org/api/references/plugin_api/classes/joplin.html 
+
+Plugin Getting Started:
+@https://joplinapp.org/help/api/get_started/plugins/ 
+
+Plugin Tutorial:
+
+TOC Plugin Tutorial
+@https://joplinapp.org/help/api/tutorials/toc_plugin/
+
+Markdow Editor Plugin Tutorial 
+@https://joplinapp.org/help/api/tutorials/cm6_plugin 
+
+EXAMPLES CODE
+TOC Plugin Code: https://github.com/laurent22/joplin/tree/dev/packages/app-cli/tests/support/plugins/toc/
+
+ Markdown Editor Plugin Code:  https://github.com/laurent22/joplin/tree/dev/packages/app-cli/tests/support/plugins/codemirror5-and-codemirror6/ 
+
