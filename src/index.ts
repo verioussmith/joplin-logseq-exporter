@@ -9,17 +9,17 @@ enum FileSystemItem {
   Directory = 2,
 }
 
-enum ModelType {
-  Note = 1,
-  Folder = 2,
-  Setting = 3,
-  Resource = 4,
-  Tag = 5,
-  NoteTag = 6,
-  Search = 7,
-  Command = 8,
-  MasterKey = 9,
-}
+// enum ModelType {
+//   Note = 1,
+//   Folder = 2,
+//   Setting = 3,
+//   Resource = 4,
+//   Tag = 5,
+//   NoteTag = 6,
+//   Search = 7,
+//   Command = 8,
+//   MasterKey = 9,
+// }
 
 // Settings keys
 const SETTINGS_SECTION = 'logseqExporter';
@@ -30,7 +30,6 @@ const SETTINGS = {
   SPLIT_BY_PARAGRAPH: 'splitByParagraph',
   BROWSE_BUTTON: 'browseButton',
 };
-
 
 /**
  * Show the export dialog with options for exporting to Logseq
